@@ -18,6 +18,14 @@ public class SMTP {
     public static void main(String[] args) {
         // TODO code application logic here
         
+        MultiThreadedServer server = new MultiThreadedServer(2407, 5);
+        new Thread(server).start();
+
+        try {
+            Thread.sleep(20 * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         
     }
     
