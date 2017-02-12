@@ -31,8 +31,9 @@ public class SMTPRequest implements Runnable {
 
     public SMTPRequest(Socket clientSocket) {
         this.clientSocket = clientSocket;
-        this.emails = new ArrayList();
         this.loadUsers();
+        this.loadEmails();
+        System.out.println(emails);
     }
    
 
@@ -113,17 +114,15 @@ public class SMTPRequest implements Runnable {
                             
                         }
                     }
-                    if (inputLine.contains("DATA")) {
-                        output.write("354 Go Ahead\n".getBytes());
-                        readingData = true;
-                    }
                     if (readingData == true) {
                         if (inputLine.contains("SUBJECT:")) {
-                            subject = inputLine.substring(8, inputLine.length());
+                            subject = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
+                            System.out.println("Subject saved " + subject);
                         }
                         else {
                             if (!inputLine.trim().equals(".")) {
-                                message += msg;
+                                message += msg + "\n";
+                                System.out.println("Message saved" + message);
                             }
                             else {
                                 readingData = false;
@@ -131,8 +130,12 @@ public class SMTPRequest implements Runnable {
                             }
                         }
                     }
+                    if (inputLine.contains("DATA")) {
+                        output.write("354 Go Ahead\n".getBytes());
+                        readingData = true;
+                    }
                     if (inputLine.contains("QUIT")) {
-                        Email email = new Email(userFrom, subject, message, userTo);
+                        Email email = new Email(userFrom, message, subject, userTo);
                         this.emails.add(email);
                         this.saveEmails();
                         output.write("Closing Connection\n".getBytes());
@@ -182,7 +185,7 @@ public class SMTPRequest implements Runnable {
       }
     }
     
-    public void loadEmails() {
+    private void loadEmails() {
         try {
          FileInputStream fileIn = new FileInputStream("data/emails.ser");
          ObjectInputStream in = new ObjectInputStream(fileIn);
@@ -207,21 +210,21 @@ public class SMTPRequest implements Runnable {
          out.writeObject(this.users);
          out.close();
          fileOut.close();
-         System.out.printf("Serialized data is saved in /tmp/employee.ser");
+         System.out.println("Serialized data is saved in /tmp/employee.ser");
       }catch(IOException i) {
          i.printStackTrace();
       }
     }
     
     public void saveEmails() {
-         try {
+        try {
          FileOutputStream fileOut =
          new FileOutputStream("data/emails.ser");
          ObjectOutputStream out = new ObjectOutputStream(fileOut);
          out.writeObject(this.emails);
          out.close();
          fileOut.close();
-         System.out.printf("Serialized data is saved in /tmp/employee.ser");
+         System.out.println("Serialized data is saved in /tmp/employee.ser");
       }catch(IOException i) {
          i.printStackTrace();
       }
