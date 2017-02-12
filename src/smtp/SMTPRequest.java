@@ -129,6 +129,9 @@ public class SMTPRequest implements Runnable {
                         }
                     }
                     if (inputLine.contains("QUIT")) {
+                        Email email = new Email(userFrom, subject, message, userTo);
+                        this.emails.add(email);
+                        this.saveEmails();
                         output.write("Closing Connection\n".getBytes());
                         output.close();
                         break;
