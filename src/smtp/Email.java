@@ -7,6 +7,7 @@
 package smtp;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  *
@@ -18,12 +19,14 @@ public class Email implements Serializable {
     private String message;
     private String subject;
     private User userTo;
-
+    private String time;
+    
     public Email(User userFrom, String message, String subject, User userTo) {
         this.userFrom = userFrom;
         this.message = message;
         this.subject = subject;
         this.userTo = userTo;
+        time = new Date().toString();
     }
 
   

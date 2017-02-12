@@ -32,7 +32,7 @@ public class SMTPRequest implements Runnable {
     public SMTPRequest(Socket clientSocket) {
         this.clientSocket = clientSocket;
         this.emails = new ArrayList();
-        this.users = new ArrayList();
+        this.loadUsers();
     }
    
 
@@ -48,7 +48,7 @@ public class SMTPRequest implements Runnable {
             User userFrom = null;
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             long t = System.currentTimeMillis();
-            t = t + 90*1000; //1.5 minutes time out
+            t = t + 180*1000; //2.5 minutes time out
             while(System.currentTimeMillis() < t) {
                 try {
                     String inputLine = in .readLine();
@@ -72,7 +72,9 @@ public class SMTPRequest implements Runnable {
                             //search for valid email adress.
                             boolean found = false;
                             for (User user : this.users) {
-                                if (user.getEmailAdress().equals(email)){
+                                System.out.println(user.getEmailAdress());
+                                System.out.println(email.toUpperCase());
+                                if (user.getEmailAdress().toUpperCase().equals(email)){
                                     found = true;
                                     userFrom = user;
                                 }
@@ -96,7 +98,8 @@ public class SMTPRequest implements Runnable {
                             //search for valid email adress.
                             boolean found = false;
                             for (User user : this.users) {
-                                if (user.getEmailAdress().equals(email)){
+                                System.out.println(user.getEmailAdress());
+                                if (user.getEmailAdress().toUpperCase().equals(email)){
                                     found = true;
                                     userTo = user;
                                 }
@@ -111,7 +114,7 @@ public class SMTPRequest implements Runnable {
                         }
                     }
                     if (inputLine.contains("DATA")) {
-                        output.write("354 Go Ahead".getBytes());
+                        output.write("354 Go Ahead\n".getBytes());
                         readingData = true;
                     }
                     if (readingData == true) {
@@ -143,7 +146,7 @@ public class SMTPRequest implements Runnable {
                 }
                         
             }
-            output.write("500 connection timed out after 1.5 min\n".getBytes());
+            output.write("500 connection timed out after 2.5 min\n".getBytes());
             output.close();
         } catch (IOException ex) {
             System.out.println("Error reading socket");
@@ -152,7 +155,7 @@ public class SMTPRequest implements Runnable {
    }
     
     public String getEmail(String inputLine) {
-        inputLine = inputLine.substring(1, inputLine.length()-1);
+        inputLine = inputLine.substring(inputLine.indexOf("<")+1, inputLine.length()-1);
         return inputLine;
     }
     
@@ -162,9 +165,9 @@ public class SMTPRequest implements Runnable {
     }
     
     
-    public void loadUsers() {
+    private void loadUsers() {
         try {
-         FileInputStream fileIn = new FileInputStream("/data/users.ser");
+         FileInputStream fileIn = new FileInputStream("data/users.ser");
          ObjectInputStream in = new ObjectInputStream(fileIn);
          this.users = (ArrayList<User>) in.readObject();
          in.close();
@@ -181,7 +184,7 @@ public class SMTPRequest implements Runnable {
     
     public void loadEmails() {
         try {
-         FileInputStream fileIn = new FileInputStream("/data/emails.ser");
+         FileInputStream fileIn = new FileInputStream("data/emails.ser");
          ObjectInputStream in = new ObjectInputStream(fileIn);
          this.emails = (ArrayList<Email>) in.readObject();
          in.close();
@@ -199,7 +202,7 @@ public class SMTPRequest implements Runnable {
     public void saveUsers() {
         try {
          FileOutputStream fileOut =
-         new FileOutputStream("/data/users.ser");
+         new FileOutputStream("data/users.ser");
          ObjectOutputStream out = new ObjectOutputStream(fileOut);
          out.writeObject(this.users);
          out.close();
@@ -213,7 +216,7 @@ public class SMTPRequest implements Runnable {
     public void saveEmails() {
          try {
          FileOutputStream fileOut =
-         new FileOutputStream("/data/emails.ser");
+         new FileOutputStream("data/emails.ser");
          ObjectOutputStream out = new ObjectOutputStream(fileOut);
          out.writeObject(this.emails);
          out.close();

@@ -6,11 +6,13 @@
 
 package smtp;
 
+import java.io.Serializable;
+
 /**
  *
  * @author SDX
  */
-public class User {
+public class User implements Serializable {
 
     private String emailAdress;
 
