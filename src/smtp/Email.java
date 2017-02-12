@@ -14,22 +14,52 @@ import java.io.Serializable;
  */
 public class Email implements Serializable {
     
-    private User user;
+    private User userFrom;
     private String message;
+    private String subject;
+    private User userTo;
 
-    public Email(User user, String message) {
-        this.user = user;
+    public Email(User userFrom, String message, String subject, User userTo) {
+        this.userFrom = userFrom;
         this.message = message;
+        this.subject = subject;
+        this.userTo = userTo;
     }
 
-    public User getUser() {
-        return user;
+  
+
+    public Email(User user, String message, String subject) {
+        this.userFrom = user;
+        this.message = message;
+        this.subject = subject;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public String getSubject() {
+        return subject;
     }
 
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public User getUserFrom() {
+        return userFrom;
+    }
+
+    public void setUserFrom(User userFrom) {
+        this.userFrom = userFrom;
+    }
+
+    public User getUserTo() {
+        return userTo;
+    }
+
+    public void setUserTo(User userTo) {
+        this.userTo = userTo;
+    }
+    
+    
+   
     
     public String getMessage() {
         return message;
@@ -41,8 +71,9 @@ public class Email implements Serializable {
 
     @Override
     public String toString() {
-        return "Email{" + "user=" + user + ", message=" + message + '}';
+        return "Email{" + "userFrom=" + userFrom + ", message=" + message + ", subject=" + subject + ", userTo=" + userTo + '}';
     }
-    
+
+   
     
 }
