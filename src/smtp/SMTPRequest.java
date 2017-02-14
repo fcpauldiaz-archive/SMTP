@@ -42,6 +42,11 @@ public class SMTPRequest implements Runnable {
         try {
             String inputArray[];
             boolean readingData = false;
+            boolean commandValid1 = false;
+            boolean commandValid2 = false;
+            boolean commandValid3 = false;
+            boolean commandValid4 = false;
+            boolean commandValid5 = false;
             OutputStream output = clientSocket.getOutputStream();
             String subject = "";
             String message = "";
@@ -49,7 +54,7 @@ public class SMTPRequest implements Runnable {
             User userFrom = null;
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             long t = System.currentTimeMillis();
-            t = t + 180*1000; //2.5 minutes time out
+            t = t + 300*1000; //5 minutes time out
             while(System.currentTimeMillis() < t) {
                 try {
                     String inputLine = in .readLine();
@@ -58,8 +63,10 @@ public class SMTPRequest implements Runnable {
                     System.out.println(inputLine);
                     if (inputLine.contains("HELO")){
                         inputArray = inputLine.split(" ");
-                        if (inputArray.length >= 2) 
+                        if (inputArray.length >= 2) {
                             output.write("250 host at your service\n".getBytes());
+                            commandValid1 = true;
+                        }
                         else
                             output.write("500 missing param at helo\n".getBytes());
                     }
@@ -78,6 +85,7 @@ public class SMTPRequest implements Runnable {
                                 if (user.getEmailAdress().toUpperCase().equals(email)){
                                     found = true;
                                     userFrom = user;
+                                    commandValid2 = true;
                                 }
                             }
                             if (!found) {
@@ -109,6 +117,7 @@ public class SMTPRequest implements Runnable {
                                 output.write("500 email address to send not found\n".getBytes());
                             }
                             if (found) {
+                                commandValid3 = true;
                                 output.write("250 2.1.5 OK\n".getBytes());
                             }
                             
@@ -126,6 +135,7 @@ public class SMTPRequest implements Runnable {
                             }
                             else {
                                 readingData = false;
+                                commandValid5 = true;
                                 output.write("250 OK FINISH\n".getBytes());
                             }
                         }
@@ -133,23 +143,36 @@ public class SMTPRequest implements Runnable {
                     if (inputLine.contains("DATA")) {
                         output.write("354 Go Ahead\n".getBytes());
                         readingData = true;
+                        commandValid4 = true;
                     }
                     if (inputLine.contains("QUIT")) {
-                        Email email = new Email(userFrom, message, subject, userTo);
-                        this.emails.add(email);
-                        this.saveEmails();
-                        output.write("Closing Connection\n".getBytes());
-                        output.close();
+                        if (commandValid1 && commandValid2 
+                            && commandValid3 && commandValid4
+                            && commandValid5) {
+                            Email email = new Email(userFrom, message, subject, userTo);
+                            this.emails.add(email);
+                            this.saveEmails();
+                            output.write("Saving and closing Connection\n".getBytes());
+                            output.close();
+                        }
+                        else {
+                            output.write("500 error on the command order\n".getBytes());
+                        }
                         break;
                     }
-                    
+                    if (!(commandValid1 || commandValid2 
+                            || commandValid3 || commandValid4
+                            || commandValid5)) {
+                        output.write("404 command not recognized\n".getBytes());
+                    }
                     
                 } catch(Exception e){
-                        break;
+                    e.printStackTrace();
+                    break;
                 }
                         
             }
-            output.write("500 connection timed out after 2.5 min\n".getBytes());
+            output.write("500 connection timed out after 5.5 min\n".getBytes());
             output.close();
         } catch (IOException ex) {
             System.out.println("Error reading socket");
@@ -193,12 +216,9 @@ public class SMTPRequest implements Runnable {
          in.close();
          fileIn.close();
       }catch(IOException i) {
-         i.printStackTrace();
-         return;
+          this.emails = new ArrayList();
       }catch(ClassNotFoundException c) {
-         System.out.println("Emails class not found");
-         c.printStackTrace();
-         return;
+          this.emails = new ArrayList();
       }
     }
     
