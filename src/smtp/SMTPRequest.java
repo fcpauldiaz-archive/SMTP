@@ -16,6 +16,8 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -28,6 +30,9 @@ public class SMTPRequest implements Runnable {
     protected WorkingQueue cola = null;
     protected ArrayList<Email> emails;
     protected ArrayList<User> users;
+    public final Pattern VALID_EMAIL_ADDRESS_REGEX = 
+    Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+
 
     public SMTPRequest(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -40,7 +45,7 @@ public class SMTPRequest implements Runnable {
     @Override
     public void run() {
         try {
-            String inputArray[];
+            
             boolean readingData = false;
             boolean commandValid1 = false;
             boolean commandValid2 = false;
@@ -57,47 +62,56 @@ public class SMTPRequest implements Runnable {
             t = t + 300*1000; //5 minutes time out
             while(System.currentTimeMillis() < t) {
                 try {
-                    String inputLine = in .readLine();
+                    String inputLine = in.readLine().replaceAll("\\s+","");
                     String msg = inputLine;
-                    inputLine = inputLine.toUpperCase();
+                    inputLine = inputLine.toUpperCase().trim();
                     System.out.println(inputLine);
                     if (inputLine.contains("HELO")){
-                        inputArray = inputLine.split(" ");
-                        if (inputArray.length >= 2) {
+                        int length = inputLine.length();
+                        if (length >= 4) {
                             output.write("250 host at your service\n".getBytes());
                             commandValid1 = true;
                         }
                         else
                             output.write("500 missing param at helo\n".getBytes());
                     }
-                    if (inputLine.contains("MAIL FROM:")) {
+                    if (inputLine.contains("MAILFROM")) {
                         if (!inputLine.contains("<") || !inputLine.contains(">") 
-                            || !inputLine.contains("@")) {
-                            output.write("500 Invalid email format\n".getBytes());
+                            || !inputLine.contains("@") || !inputLine.contains(":")) {
+                            output.write("500 Invalid request format\n".getBytes());
                         }
                         else {
                             String email = this.getEmail(inputLine);
+                            System.out.println(email);
+                            boolean valid = this.validate(email);
                             //search for valid email adress.
                             boolean found = false;
-                            for (User user : this.users) {
-                                System.out.println(user.getEmailAdress());
-                                System.out.println(email.toUpperCase());
-                                if (user.getEmailAdress().toUpperCase().equals(email)){
-                                    found = true;
-                                    userFrom = user;
-                                    commandValid2 = true;
+                            if (valid) {
+                          
+                                for (User user : this.users) {
+                                    System.out.println(user.getEmailAdress());
+                                    System.out.println(email.toUpperCase());
+                                    if (user.getEmailAdress().toUpperCase().equals(email)){
+                                        found = true;
+                                        userFrom = user;
+                                        commandValid2 = true;
+                                    }
                                 }
+                            } else {
+                                output.write("545 email address not valid format\n".getBytes());
                             }
-                            if (!found) {
-                                output.write("500 email address to send not found\n".getBytes());
+                            if (!found && valid) {
+                                output.write("550 email address to send not found\n".getBytes());
                             }
-                            if (found) {
+                            if (found && valid) {
                                 output.write("250 2.1.5 OK\n".getBytes());
                             }
+                            System.out.println(valid);
+                            System.out.println(found);
                             
                         }
                     }
-                    if (inputLine.contains("RCPT TO:")) {
+                    if (inputLine.contains("RCPTTO")) {
                         if (!inputLine.contains("<") || !inputLine.contains(">") 
                             || !inputLine.contains("@")) {
                             output.write("500 Invalid email format\n".getBytes());
@@ -118,20 +132,20 @@ public class SMTPRequest implements Runnable {
                             }
                             if (found) {
                                 commandValid3 = true;
-                                output.write("250 2.1.5 OK\n".getBytes());
+                                output.write("250 Sender found OK\n".getBytes());
                             }
                             
                         }
                     }
                     if (readingData == true) {
                         if (inputLine.contains("SUBJECT:")) {
-                            subject = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
+                            subject = inputLine.substring(msg.indexOf(":")+1, msg.length());
                             System.out.println("Subject saved " + subject);
                         }
                         else {
                             if (!inputLine.trim().equals(".")) {
                                 message += msg + "\n";
-                                System.out.println("Message saved" + message);
+                                System.out.println("Message saved " + message);
                             }
                             else {
                                 readingData = false;
@@ -167,6 +181,7 @@ public class SMTPRequest implements Runnable {
                     }
                     
                 } catch(Exception e){
+                    output.write("500 bad request \n".getBytes());
                     e.printStackTrace();
                     break;
                 }
@@ -248,6 +263,12 @@ public class SMTPRequest implements Runnable {
       }catch(IOException i) {
          i.printStackTrace();
       }
+    }
+    
+    
+    public boolean validate(String emailStr) {
+        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX .matcher(emailStr);
+        return matcher.find();
     }
     
     
