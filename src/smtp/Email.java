@@ -20,12 +20,16 @@ public class Email implements Serializable {
     private String subject;
     private User userTo;
     private String time;
+    private String messageFrom;
+    private String messageTo;
     
-    public Email(User userFrom, String message, String subject, User userTo) {
+    public Email(User userFrom, String message, String subject, User userTo, String messageFrom, String messageTo) {
         this.userFrom = userFrom;
         this.message = message;
         this.subject = subject;
         this.userTo = userTo;
+        this.messageFrom = messageFrom;
+        this.messageTo = messageTo;
         time = new Date().toString();
     }
 
@@ -60,9 +64,30 @@ public class Email implements Serializable {
     public void setUserTo(User userTo) {
         this.userTo = userTo;
     }
+
+    public void setTime(String time) {
+        this.time = time;
+    }
     
-    
-   
+    public String getTime() {
+        return time;
+    }
+
+    public String getMessageFrom() {
+        return messageFrom;
+    }
+
+    public void setMessageFrom(String messageFrom) {
+        this.messageFrom = messageFrom;
+    }
+
+    public String getMessageTo() {
+        return messageTo;
+    }
+
+    public void setMessageTo(String messageTo) {
+        this.messageTo = messageTo;
+    }
     
     public String getMessage() {
         return message;
