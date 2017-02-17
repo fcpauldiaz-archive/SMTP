@@ -1,24 +1,21 @@
 /**
 * Universidad Del Valle de Guatemala
 * Pablo Diaz 13203
-* Jan 26, 2017
+* Feb 16, 2017
 **/
 
 package smtp;
 
 /**
- * Esta clase solo sirve para llamar al metodo run de los runnable y prints
+ *
  * @author SDX
  */
-public class Request implements Runnable {
-    
-    private WorkingQueue cola;
-    private GetMailQueue colaMail;
-    public Request(WorkingQueue queue) {
-        this.cola = queue;
-    }
 
-    public Request(GetMailQueue queue) {
+public class RequestGet implements Runnable {
+    
+    private GetMailQueue colaMail;
+
+    public RequestGet(GetMailQueue queue) {
         this.colaMail = queue;
     }
     
@@ -27,7 +24,7 @@ public class Request implements Runnable {
         try {
             while (true) {
                 String name = Thread.currentThread().getName();
-                Runnable request = cola.get();
+                Runnable request = colaMail.get();
                 System.out.println("Request empieza por : " + name);
                 request.run();
                 System.out.println("Request termina por : " + name);

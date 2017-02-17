@@ -19,7 +19,9 @@ public class SMTP {
         // TODO code application logic here
         
         MultiThreadedServer server = new MultiThreadedServer(2407, 5);
+        GetMailServer getMail = new GetMailServer(2507, 5);
         new Thread(server).start();
+        new Thread(getMail).start();
 
         try {
             Thread.sleep(20 * 1000);
