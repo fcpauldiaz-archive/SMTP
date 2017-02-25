@@ -155,7 +155,7 @@ public class SMTPRequest implements Runnable {
                             recognized = true;
                             messageFrom = msg;
                         }
-                        else if (inputLine.contains("RPCTTO:")) {
+                        else if (inputLine.contains("TO:")) {
                             recognized = true;
                             messageTo += msg + ", ";
                         }
