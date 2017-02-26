@@ -66,8 +66,9 @@ public class SMTPRequest implements Runnable {
             t = t + 300*1000; //5 minutes time out
             while(System.currentTimeMillis() < t) {
                 try {
-                    String inputLine = in.readLine().replaceAll("\\s+","");
+                    String inputLine = in.readLine();
                     String msg = inputLine;
+                    inputLine = inputLine.replaceAll("\\s+","");
                     inputLine = inputLine.toUpperCase().trim();
                     System.out.println(inputLine);
                         
@@ -148,7 +149,7 @@ public class SMTPRequest implements Runnable {
                    if (readingData == true) {
                         if (inputLine.contains("SUBJECT:")) {
                            recognized = true;
-                           subject = inputLine.substring(msg.indexOf(":")+1, msg.length());
+                           subject = msg.substring(msg.indexOf(":")+1, msg.length());
                            System.out.println("Subject saved " + subject);
                         }
                         else if(inputLine.contains("FROM:")) {
@@ -165,12 +166,14 @@ public class SMTPRequest implements Runnable {
                         }
                         else {
                            if (!inputLine.trim().equals(".")) {
+                               recognized = true;
                                message += msg + "\r\n";
                                System.out.println("Message saved " + message);
                            }
                            else {
                                readingData = false;
                                commandValid5 = true;
+                               recognized = true;
                                output.write("250 OK FINISH\r\n".getBytes());
                            }
                        }
