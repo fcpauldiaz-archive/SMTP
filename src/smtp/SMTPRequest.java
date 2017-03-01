@@ -135,7 +135,7 @@ public class SMTPRequest implements Runnable {
                                }
                            }
                            if (!found) {
-                               output.write("66 email address to send not found\r\n".getBytes());
+                               output.write("99 email address to send not found\r\n".getBytes());
                            }
                            if (found) {
                                commandValid3 = true;

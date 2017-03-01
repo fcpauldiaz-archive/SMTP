@@ -8,12 +8,16 @@ package smtp;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -26,7 +30,8 @@ public class GetMailRequest implements Runnable{
     protected WorkingQueue cola = null;
     protected ArrayList<Email> emails;
     protected ArrayList<User> users;
-    
+    public final Pattern VALID_EMAIL_ADDRESS_REGEX = 
+    Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
     
     public GetMailRequest(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -72,33 +77,48 @@ public class GetMailRequest implements Runnable{
         
         try {
             OutputStream output = clientSocket.getOutputStream();
-        boolean emailValid = false;
-        String subject = "";
-        String message = "";
-        User user = null;
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            boolean emailFound = false;
+            boolean emailValid = false;
+            String subject = "";
+            String message = "";
+            User user = null;
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-        while(true) {
-            String inputLine = in.readLine().replaceAll("\\s+","");
-            String msg = inputLine;
-            inputLine = inputLine.toUpperCase().trim();
-            System.out.println(inputLine);
-            if (inputLine.contains("EMAIL:")) {
-                inputLine = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
+            while(true) {
+                String inputLine = in.readLine().replaceAll("\\s+","");
+                String msg = inputLine;
+                inputLine = inputLine.toUpperCase().trim();
                 System.out.println(inputLine);
-                for (int i = 0; i < this.users.size(); i++) {
-                    if (this.users.get(i).getEmailAdress().equals(inputLine.toLowerCase())) {
-                        user = this.users.get(i);
-                        emailValid = true;
-                        output.write("200 email found\r\n".getBytes());
-                        sendEmailData(output, user);
+                if (inputLine.contains("EMAIL:")) {
+                    inputLine = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
+                    System.out.println(inputLine);
+                    for (int i = 0; i < this.users.size(); i++) {
+                        if (this.users.get(i).getEmailAdress().equals(inputLine.toLowerCase())) {
+                            user = this.users.get(i);
+                            emailFound = true;
+                            output.write("200 email found\r\n".getBytes());
+                            sendEmailData(output, user);
+                        }
                     }
                 }
+                if (inputLine.contains("CREATE:")) {
+                    inputLine = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
+                    emailValid = this.validate(inputLine.toLowerCase());
+                    if (emailValid == true) {
+                        this.users.add(new User(inputLine.toLowerCase()));
+                        this.saveUsers();
+                    }
+                    
+                }
+                if (emailValid == false) {
+                    output.write("66 Email not valid\r\n".getBytes());
+                }
+                if (emailFound == false) {
+                    output.write("99 Email not found\r\n".getBytes());
+                }
+                emailValid = false;
+                emailFound = false;
             }
-            if (emailValid == false) {
-                output.write("Email not found\r\n".getBytes());
-            }
-        }
         } catch (IOException ex) {
             System.out.println("Error socket");
         }
@@ -121,5 +141,24 @@ public class GetMailRequest implements Runnable{
             }
         }
     }
-
+    
+    
+    public void saveUsers() {
+        try {
+         FileOutputStream fileOut =
+         new FileOutputStream("data/users.ser");
+         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+         out.writeObject(this.users);
+         out.close();
+         fileOut.close();
+         System.out.println("User saved");
+      }catch(IOException i) {
+         i.printStackTrace();
+      }
+    }
+      
+    public boolean validate(String emailStr) {
+        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX .matcher(emailStr);
+        return matcher.find();
+    }
 }

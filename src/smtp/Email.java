@@ -22,6 +22,7 @@ public class Email implements Serializable {
     private String time;
     private String messageFrom;
     private String messageTo;
+    private String redirectTo;
     
     public Email(User userFrom, String message, String subject, User userTo, String messageFrom, String messageTo) {
         this.userFrom = userFrom;
@@ -96,6 +97,15 @@ public class Email implements Serializable {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public String getRedirectTo() {
+        return redirectTo;
+    }
+
+    public void setRedirectTo(String redirectTo) {
+        this.redirectTo = redirectTo;
+    }
+    
 
     @Override
     public String toString() {
