@@ -30,6 +30,7 @@ public class SMTPRequest implements Runnable {
     protected WorkingQueue cola = null;
     protected ArrayList<Email> emails;
     protected ArrayList<User> users;
+    protected int localId;
     public final Pattern VALID_EMAIL_ADDRESS_REGEX = 
     Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
 
@@ -45,7 +46,8 @@ public class SMTPRequest implements Runnable {
     @Override
     public void run() {
         try {
-            
+            SMTP.clientID = SMTP.clientID + 1;
+            localId = SMTP.clientID;
             boolean readingData = false;
             boolean commandValid1 = false;
             boolean commandValid2 = false;
@@ -70,7 +72,7 @@ public class SMTPRequest implements Runnable {
                     String msg = inputLine;
                     inputLine = inputLine.replaceAll("\\s+","");
                     inputLine = inputLine.toUpperCase().trim();
-                    System.out.println(inputLine);
+                    debugGUI(inputLine);
                         
                     if (inputLine.contains("HELO")) {
                         recognized = true;
@@ -308,5 +310,11 @@ public class SMTPRequest implements Runnable {
         return matcher.find();
     }
     
+    public void debugGUI(String message) {
+        if (SMTP.debug == true && !message.isEmpty()) {
+            SMTP.window.addRow(localId+"", message);
+        }
+        
+    }
     
 }
