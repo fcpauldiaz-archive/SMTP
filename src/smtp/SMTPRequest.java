@@ -72,7 +72,7 @@ public class SMTPRequest implements Runnable {
                     String msg = inputLine;
                     inputLine = inputLine.replaceAll("\\s+","");
                     inputLine = inputLine.toUpperCase().trim();
-                    debugGUI(inputLine);
+                    debugGUI(msg);
                         
                     if (inputLine.contains("HELO")) {
                         recognized = true;
@@ -92,15 +92,13 @@ public class SMTPRequest implements Runnable {
                        }
                        else {
                            String email = this.getEmail(inputLine);
-                           System.out.println(email);
+                           debugGUI(email);
                            boolean valid = this.validate(email);
                            //search for valid email adress.
                            boolean found = false;
                            if (valid) {
 
                                for (User user : this.users) {
-                                   System.out.println(user.getEmailAdress());
-                                   System.out.println(email.toUpperCase());
                                    if (user.getEmailAdress().toUpperCase().equals(email)){
                                        found = true;
                                        userFrom = user;
@@ -116,8 +114,6 @@ public class SMTPRequest implements Runnable {
                            if (found && valid) {
                                output.write("250 2.1.5 OK\r\n".getBytes());
                            }
-                           System.out.println(valid);
-                           System.out.println(found);
 
                        }
                    }
@@ -132,7 +128,7 @@ public class SMTPRequest implements Runnable {
                            //search for valid email adress.
                            boolean found = false;
                            for (User user : this.users) {
-                               System.out.println(user.getEmailAdress());
+
                                if (user.getEmailAdress().toUpperCase().equals(email)){
                                    found = true;
                                    usersTo.add(user);
@@ -152,7 +148,7 @@ public class SMTPRequest implements Runnable {
                         if (inputLine.contains("SUBJECT:")) {
                            recognized = true;
                            subject = msg.substring(msg.indexOf(":")+1, msg.length());
-                           System.out.println("Subject saved " + subject);
+                           debugGUI("Subject saved " + subject);
                         }
                         else if(inputLine.contains("FROM:")) {
                             recognized = true;
@@ -170,7 +166,7 @@ public class SMTPRequest implements Runnable {
                            if (!inputLine.trim().equals(".")) {
                                recognized = true;
                                message += msg + "\r\n";
-                               System.out.println("Message saved " + message);
+                               debugGUI("Message saved " + message);
                            }
                            else {
                                readingData = false;
