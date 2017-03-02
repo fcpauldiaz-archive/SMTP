@@ -17,6 +17,7 @@ public class SMTP {
     public static DebugServer window;
     public static boolean debug = true;
     public static int clientID = 0;
+    public static String mailServer = "ngrok.com";
 
     /**
      * @param args the command line arguments

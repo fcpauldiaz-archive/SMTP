@@ -98,16 +98,24 @@ public class GetMailRequest implements Runnable{
                             emailFound = true;
                             output.write("200 email found\r\n".getBytes());
                             sendEmailData(output, user);
+                            output.close();
                         }
                     }
                 }
                 if (inputLine.contains("CREATE:")) {
                     inputLine = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
                     emailValid = this.validate(inputLine.toLowerCase());
+                    for (int i = 0;  i < this.users.size(); i++) {
+                        System.out.println(this.users.get(i).getEmailAdress());
+                        if (this.users.get(i).getEmailAdress().equals(inputLine.toLowerCase())){
+                            emailValid = false;
+                        }
+                    }
                     if (emailValid == true) {
                         this.users.add(new User(inputLine.toLowerCase()));
                         this.saveUsers();
-                    }
+                        emailFound = true;
+                    } 
                     
                 }
                 if (emailValid == false) {
@@ -124,10 +132,13 @@ public class GetMailRequest implements Runnable{
         }
     }
     
-    public void sendEmailData(OutputStream output, User user) {
-        for (int i = 0; i < this.emails.size(); i++){
-            Email email = this.emails.get(i);
+    public void sendEmailData(OutputStream output, User user) throws IOException {
+        ArrayList<Integer> deleteIndex = new ArrayList();
+        for (int j = 0; j < this.emails.size(); j++) {
+            Email email = this.emails.get(j);
+
             if (email.getUserTo().getEmailAdress().equals(user.getEmailAdress())) {
+                deleteIndex.add(j);
                 try {
                     output.write("START \r\n".getBytes());
                     output.write(("FROM: " + email.getUserFrom().getEmailAdress() + "\r\n").getBytes());
@@ -140,6 +151,27 @@ public class GetMailRequest implements Runnable{
                 }
             }
         }
+        //delete messages from server
+        for (Integer deleteIndex1 : deleteIndex) {
+            this.emails.remove((int) deleteIndex1);
+        }
+        this.saveEmails();
+        output.write("200 emails sent and deleted \r\n".getBytes());
+    }
+    
+     
+    public void saveEmails() {
+        try {
+         FileOutputStream fileOut =
+         new FileOutputStream("data/emails.ser");
+         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+         out.writeObject(this.emails);
+         out.close();
+         fileOut.close();
+         System.out.println("New Email Saved");
+      }catch(IOException i) {
+         i.printStackTrace();
+      }
     }
     
     

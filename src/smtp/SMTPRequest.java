@@ -135,7 +135,8 @@ public class SMTPRequest implements Runnable {
                                }
                            }
                            if (!found) {
-                               output.write("99 email address to send not found\r\n".getBytes());
+                               output.write("99 email address to send not found, redirect activated\r\n".getBytes());
+                               commandValid3 = true;
                            }
                            if (found) {
                                commandValid3 = true;
@@ -189,11 +190,19 @@ public class SMTPRequest implements Runnable {
                            && commandValid5) {
                             
                             for(User user: usersTo) {
-                              Email email = new Email(userFrom, message, subject, user, messageFrom, messageTo);
-                              if (!date.isEmpty()) {
-                                  email.setTime(date);
-                              }
-                              this.emails.add(email);
+                                String emailSt = user.getEmailAdress();
+                                String server = emailSt.substring(emailSt.indexOf("@")+1, emailSt.length());
+                                //redirect to other server
+                                if (!server.equals(SMTP.mailServer)) {
+                                    redirectServer(user, server, userFrom.getEmailAdress(), subject, message, emailSt);
+                                }
+                                else {
+                                    Email email = new Email(userFrom, message, subject, user, messageFrom, messageTo);
+                                    if (!date.isEmpty()) {
+                                        email.setTime(date);
+                                    }
+                                    this.emails.add(email);
+                                }
                             }
                            
                            this.saveEmails();
@@ -311,6 +320,24 @@ public class SMTPRequest implements Runnable {
             SMTP.window.addRow(localId+"", message);
         }
         
+    }
+    
+    public void redirectServer(User user, String server, String userFrom, String subject, String message, String emailSt) {
+        try {
+            Socket redirect = new Socket(server, 2407);
+            try (OutputStream outRedirect = redirect.getOutputStream()) {
+                outRedirect.write("HELO ngrok.com".getBytes());
+                outRedirect.write(("MAIL FROM: "+"<"+ userFrom + ">").getBytes());
+                outRedirect.write(("RCPT TO: "+"<"+ emailSt +">").getBytes());
+                outRedirect.write(("DATA").getBytes());
+                outRedirect.write(("SUBJECT: " + subject).getBytes());
+                outRedirect.write(message.getBytes());
+                outRedirect.write(".".getBytes());
+                outRedirect.write("QUIT".getBytes());
+            }
+        } catch (IOException ex) {
+            System.out.println("Error redirecting to other server");
+        }
     }
     
 }
