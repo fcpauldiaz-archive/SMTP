@@ -15,7 +15,7 @@ import java.util.Date;
  */
 public class Email implements Serializable {
     
-    private User userFrom;
+    private String userFrom;
     private String message;
     private String subject;
     private User userTo;
@@ -24,7 +24,7 @@ public class Email implements Serializable {
     private String messageTo;
     private String redirectTo;
     
-    public Email(User userFrom, String message, String subject, User userTo, String messageFrom, String messageTo) {
+    public Email(String userFrom, String message, String subject, User userTo, String messageFrom, String messageTo) {
         this.userFrom = userFrom;
         this.message = message;
         this.subject = subject;
@@ -37,7 +37,7 @@ public class Email implements Serializable {
   
 
     public Email(User user, String message, String subject) {
-        this.userFrom = user;
+        this.userTo = user;
         this.message = message;
         this.subject = subject;
     }
@@ -50,11 +50,11 @@ public class Email implements Serializable {
         this.subject = subject;
     }
 
-    public User getUserFrom() {
+    public String getUserFrom() {
         return userFrom;
     }
 
-    public void setUserFrom(User userFrom) {
+    public void setUserFrom(String userFrom) {
         this.userFrom = userFrom;
     }
 

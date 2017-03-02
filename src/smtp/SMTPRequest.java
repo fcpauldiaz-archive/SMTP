@@ -62,7 +62,7 @@ public class SMTPRequest implements Runnable {
             String messageTo = "";
             String date = "";
             ArrayList<User> usersTo = new ArrayList();
-            User userFrom = null;
+            String userFrom = "";
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             long t = System.currentTimeMillis();
             t = t + 300*1000; //5 minutes time out
@@ -97,14 +97,8 @@ public class SMTPRequest implements Runnable {
                            //search for valid email adress.
                            boolean found = false;
                            if (valid) {
-
-                               for (User user : this.users) {
-                                   if (user.getEmailAdress().toUpperCase().equals(email)){
-                                       found = true;
-                                       userFrom = user;
-                                       commandValid2 = true;
-                                   }
-                               }
+                               commandValid2= true;
+                               userFrom = email;
                            } else {
                                output.write("99 email address not valid format\r\n".getBytes());
                            }
@@ -194,7 +188,7 @@ public class SMTPRequest implements Runnable {
                                 String server = emailSt.substring(emailSt.indexOf("@")+1, emailSt.length());
                                 //redirect to other server
                                 if (!server.equals(SMTP.mailServer)) {
-                                    redirectServer(user, server, userFrom.getEmailAdress(), subject, message, emailSt);
+                                    redirectServer(user, server, userFrom, subject, message, emailSt);
                                 }
                                 else {
                                     Email email = new Email(userFrom, message, subject, user, messageFrom, messageTo);

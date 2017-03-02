@@ -141,7 +141,7 @@ public class GetMailRequest implements Runnable{
                 deleteIndex.add(j);
                 try {
                     output.write("START \r\n".getBytes());
-                    output.write(("FROM: " + email.getUserFrom().getEmailAdress() + "\r\n").getBytes());
+                    output.write(("FROM: " + email.getUserFrom() + "\r\n").getBytes());
                     output.write(("SUBJECT: " + email.getSubject()+ "\r\n").getBytes() );
                     output.write(("DATA: " + email.getMessage()+ "\r\n").getBytes());
                     output.write(("DATE: " + email.getTime()+ "\r\n").getBytes());
