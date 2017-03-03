@@ -49,9 +49,10 @@ public class GetMailRequest implements Runnable{
          in.close();
          fileIn.close();
       }catch(IOException i) {
-         i.printStackTrace();
+          this.users = new ArrayList();
          return;
       }catch(ClassNotFoundException c) {
+          this.users = new ArrayList();
          System.out.println("User Class not found");
          c.printStackTrace();
          return;
@@ -106,7 +107,7 @@ public class GetMailRequest implements Runnable{
                     inputLine = inputLine.substring(inputLine.indexOf(":")+1, inputLine.length());
                     emailValid = this.validate(inputLine.toLowerCase());
                     for (int i = 0;  i < this.users.size(); i++) {
-                        System.out.println(this.users.get(i).getEmailAdress());
+                       //  System.out.println(this.users.get(i).getEmailAdress());
                         if (this.users.get(i).getEmailAdress().equals(inputLine.toLowerCase())){
                             emailValid = false;
                         }
@@ -114,6 +115,7 @@ public class GetMailRequest implements Runnable{
                     if (emailValid == true) {
                         this.users.add(new User(inputLine.toLowerCase()));
                         this.saveUsers();
+                        output.write("200\r\n".getBytes());
                         emailFound = true;
                     } 
                     
@@ -151,12 +153,13 @@ public class GetMailRequest implements Runnable{
                 }
             }
         }
+        //POP3
         //delete messages from server
-        for (Integer deleteIndex1 : deleteIndex) {
-            this.emails.remove((int) deleteIndex1);
-        }
-        this.saveEmails();
-        output.write("200 emails sent and deleted \r\n".getBytes());
+        //for (Integer deleteIndex1 : deleteIndex) {
+        //    this.emails.remove((int) deleteIndex1);
+        //}
+        // this.saveEmails();
+        output.write("200 emails sent\r\n".getBytes());
     }
     
      

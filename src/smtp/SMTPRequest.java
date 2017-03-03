@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static smtp.SMTP.windowMail;
 
 /**
  *
@@ -39,7 +40,7 @@ public class SMTPRequest implements Runnable {
         this.clientSocket = clientSocket;
         this.loadUsers();
         this.loadEmails();
-        System.out.println(emails);
+        //System.out.println(emails);
     }
    
 
@@ -62,10 +63,12 @@ public class SMTPRequest implements Runnable {
             String messageTo = "";
             String date = "";
             ArrayList<User> usersTo = new ArrayList();
+            ArrayList<String> usersToNotFound = new ArrayList();
             String userFrom = "";
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             long t = System.currentTimeMillis();
             t = t + 300*1000; //5 minutes time out
+            output.write("220 ngrok.com \r\n".getBytes());
             while(System.currentTimeMillis() < t) {
                 try {
                     String inputLine = in.readLine();
@@ -106,7 +109,7 @@ public class SMTPRequest implements Runnable {
                                output.write("99 email address to send not found\r\n".getBytes());
                            }
                            if (found && valid) {
-                               output.write("250 2.1.5 OK\r\n".getBytes());
+                               output.write("221 2.1.5 OK\r\n".getBytes());
                            }
 
                        }
@@ -129,6 +132,7 @@ public class SMTPRequest implements Runnable {
                                }
                            }
                            if (!found) {
+                               usersToNotFound.add(email);
                                output.write("99 email address to send not found, redirect activated\r\n".getBytes());
                                commandValid3 = true;
                            }
@@ -182,24 +186,29 @@ public class SMTPRequest implements Runnable {
                        if (commandValid1 && commandValid2 
                            && commandValid3 && commandValid4
                            && commandValid5) {
-                            
-                            for(User user: usersTo) {
-                                String emailSt = user.getEmailAdress();
+                            System.out.println(usersTo);
+                            for(String user: usersToNotFound) {
+                                String emailSt = user;
                                 String server = emailSt.substring(emailSt.indexOf("@")+1, emailSt.length());
+                                System.out.println(server);
+                                System.out.println(!server.equals(SMTP.mailServer));
                                 //redirect to other server
-                                if (!server.equals(SMTP.mailServer)) {
-                                    redirectServer(user, server, userFrom, subject, message, emailSt);
-                                }
-                                else {
-                                    Email email = new Email(userFrom, message, subject, user, messageFrom, messageTo);
-                                    if (!date.isEmpty()) {
-                                        email.setTime(date);
-                                    }
-                                    this.emails.add(email);
-                                }
+                               
+                                System.out.println(server);
+                                redirectServer(user, server, userFrom, subject, message, emailSt);
                             }
+                            for(User user: usersTo) {
+                               Email email = new Email(userFrom, message, subject, user, messageFrom, messageTo);
+                               if (!date.isEmpty()) {
+                                   email.setTime(date);
+                               }
+                               this.emails.add(email);
+                               this.saveEmails();
+                               this.showEmail(email);
+                            }
+                            
                            
-                           this.saveEmails();
+                           
                            output.write("221 Saving and closing Connection\r\n".getBytes());
                            output.close();
                        }
@@ -229,6 +238,8 @@ public class SMTPRequest implements Runnable {
             output.close();
         } catch (IOException ex) {
             System.out.println("Error reading socket");
+            ex.printStackTrace();
+           
         }
 
    }
@@ -303,6 +314,10 @@ public class SMTPRequest implements Runnable {
       }
     }
     
+    public void showEmail(Email email){
+        windowMail.addRow(email.getUserFrom(), email.getUserTo().getEmailAdress(), email.getSubject(), email.getMessage(), email.getTime());
+       
+    }
     
     public boolean validate(String emailStr) {
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX .matcher(emailStr);
@@ -316,18 +331,39 @@ public class SMTPRequest implements Runnable {
         
     }
     
-    public void redirectServer(User user, String server, String userFrom, String subject, String message, String emailSt) {
+    public void redirectServer(String user, String server, String userFrom, String subject, String message, String emailSt) {
+        System.out.println("redirecting");
         try {
-            Socket redirect = new Socket(server, 2407);
+            //Socket redirect = new Socket("172.20.3.144", 12000);
+           // Socket redirect = new Socket("172.20.0.151", 12000); //checha
+            //Socket redirect = new Socket("172.20.0.115", 12000);
+            Socket redirect = new Socket("172.20.8.224", 12000);
+            BufferedReader in = new BufferedReader(new InputStreamReader(redirect.getInputStream()));
+            System.out.println("redirecting");
+            String validate = in.readLine();
+            System.out.println(validate);
             try (OutputStream outRedirect = redirect.getOutputStream()) {
-                outRedirect.write("HELO ngrok.com".getBytes());
-                outRedirect.write(("MAIL FROM: "+"<"+ userFrom + ">").getBytes());
-                outRedirect.write(("RCPT TO: "+"<"+ emailSt +">").getBytes());
-                outRedirect.write(("DATA").getBytes());
-                outRedirect.write(("SUBJECT: " + subject).getBytes());
-                outRedirect.write(message.getBytes());
-                outRedirect.write(".".getBytes());
-                outRedirect.write("QUIT".getBytes());
+                outRedirect.write("helo ngrok.com\r\n".getBytes());
+                validate = in.readLine();
+                System.out.println(validate);
+                outRedirect.write(("mail from: "+"<"+ userFrom.toLowerCase() + ">\r\n").getBytes());
+                validate = in.readLine();
+                System.out.println(validate);
+                outRedirect.write(("rcpt to: "+"<"+ emailSt.toLowerCase() +">\r\n").getBytes());
+                validate = in.readLine();
+                System.out.println(validate);
+                outRedirect.write(("data\r\n").getBytes());
+                validate = in.readLine();
+                System.out.println(validate);
+                outRedirect.write(("subject: " + subject.toLowerCase() + "\r\n" + message.toLowerCase() + "\r\n").getBytes());
+                //outRedirect.write((message+ "\r\n").getBytes());
+                outRedirect.write(".\r\n".getBytes());
+                validate = in.readLine();
+                System.out.println(validate);
+                outRedirect.write("quit\r\n".getBytes());
+                validate = in.readLine();
+                System.out.println(validate);
+                redirect.close();
             }
         } catch (IOException ex) {
             System.out.println("Error redirecting to other server");
